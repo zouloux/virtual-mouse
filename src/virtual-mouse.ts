@@ -22,6 +22,18 @@ type IInitOptions = {
 	preventMouseWheel	?:boolean
 }
 
+// ----------------------------------------------------------------------------- LOAD SCRIPT HELPER
+async function loadScriptAsync( url:string ) {
+  return new Promise(( resolve, reject ) => {
+    const script = document.createElement( 'script' );
+    script.type = 'text/javascript';
+    script.src = url;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild( script );
+  });
+}
+
 // ----------------------------------------------------------------------------- CSS OVERRIDES
 const hideScrollbarCSS = `
 	body::-webkit-scrollbar,
@@ -107,6 +119,18 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	// Mouse position, screen relative
 	const position:IPoint = { x:0, y:0 }
 
+	// To detect hover changes
+	let previousElement
+
+	// --------------------------------------------------------------------------- HACK HOVERS
+	let styler
+	async function initStyler () {
+		await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
+		// @ts-ignore
+		styler = new PseudoStyler()
+		await styler.loadDocumentStyles()
+	}
+
 	// --------------------------------------------------------------------------- PRIVATES
 	function getHoveredElement () {
 		const { x, y } = position
@@ -114,7 +138,13 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	}
 	function createMouseEvent ( type:string ) {
 		const { x, y } = position
-		return new MouseEvent( type, { clientX: x, clientY: y, bubbles: true } )
+		return new MouseEvent( type, {
+			clientX: x,
+			clientY: y,
+			view: window,
+			bubbles: true,
+			cancelable: true,
+		})
 	}
 	function updatePosition () {
 		gsap.to(mouseElement, {
@@ -123,10 +153,18 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			y: position.y,
 		})
 		const element = getHoveredElement()
+		if ( element !== previousElement ) {
+			// Dispatch hover and change style
+			element && styler && styler.toggleStyle(element, ':hover', true);
+			element?.dispatchEvent( createMouseEvent('mouseover') )
+			// Dispatch mouse leave and revert style
+			previousElement && styler && styler.toggleStyle(previousElement, ':hover', false);
+			previousElement?.dispatchEvent( createMouseEvent('mouseleave') )
+		}
+		previousElement = element
 		if ( !element )
 			return
 		element.dispatchEvent( createMouseEvent('mousemove') )
-		element.dispatchEvent( createMouseEvent('mouseover') )
 	}
 	function getScrollableParent (node:Element) {
     while (node && node !== document.body) {
@@ -136,7 +174,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 				overflowX === 'auto' || overflowY === 'auto'
 				|| overflowX === 'scroll' || overflowY === 'scroll'
 			)
-					return node;
+				return node;
 			node = node.parentElement;
     }
     return document.scrollingElement ?? document.documentElement;
@@ -153,6 +191,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	return {
 		// Get mouse element to tweak it externally
 		get mouseElement () { return mouseElement },
+
+		async initHoversHack () {
+			await initStyler()
+		},
 
 		// Go to a screen absolute position
 		async to ( x:number, y:number, options?:IAnimateOptions ) {
@@ -238,10 +280,6 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			log("scroll", {x, y, ...options}, scrollableElement)
 			if ( !scrollableElement )
 				return
-			// console.log(scrollableElement)
-			// if ( scrollableElement === document.documentElement || scrollableElement === document.body ) {
-			// 	this.move( x, y, options )
-			// }
 			return gsap.to(scrollableElement, {
 				...defaultAnimateOptions, ...options,
 				scrollLeft: `+=${x}`,
@@ -257,6 +295,8 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			window.removeEventListener("wheel", mouseWheelHandler, {
 				capture: true
 			})
+			styler = null
+			previousElement = null
 		}
 	}
 }

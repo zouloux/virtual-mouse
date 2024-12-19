@@ -81,6 +81,17 @@ await mouse.click()
 mouse.dispose()
 ```
 
+## Hovers
+
+If you need to simulate hovers, call
+```typescript
+await mouse.initHoversHack()
+```
+
+This will load [this lib](https://github.com/TSedlar/pseudo-styler) which permit virtual mouse events to trigger real `:hover` pseudo effects.
+
+
+
 ## Next features
 
 ##### Move cursor to an element, centered into it
