@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "main": "dist/virtual-mouse.js",
   "types": "dist/virtual-mouse.d.ts",
-  "private": "false",
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },

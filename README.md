@@ -13,7 +13,23 @@ It can be useful to create screen captures of your website with a super smooth m
 ## Use it on website you don't own
 
 You can use it on websites loaded in chrome, without having to build anything.
-Simply open the developer console and load the script. TODO
+
+Simply open the developer console and load this lib using :
+```typescript
+import('https://esm.sh/@zouloux/virtual-mouse').then(m => { window.createVirtualMouse = m.createVirtualMouse; console.log("Loaded") })
+```
+
+When loaded, you can start to use it 
+```typescript
+const mouse = createVirtualMouse()
+await mouse.delay(.2)
+await mouse.move(400, 400)
+await mouse.delay(.2)
+await mouse.click()
+await mouse.delay(.2)
+await mouse.hide()
+mouse.dispose()
+```
 
 ### Current features
 
@@ -65,7 +81,7 @@ await mouse.click()
 mouse.dispose()
 ```
 
-### Next features
+## Next features
 
 ##### Move cursor to an element, centered into it
 - `mouse.toElement( element:Element )`
@@ -89,6 +105,12 @@ Sounds in WebAudio
 - Scroll sound
 - Type sound
 - Key sound
+
+##### Stage
+
+Create a tool to register clicks and moves and create code.
+It will have to smooth everything out.
+Maybe by hitting a specific key binding to create a new record.
 
 ##### Dependencies
 
