@@ -1,10 +1,11 @@
 {
   "name": "@zouloux/virtual-mouse",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "dist/virtual-mouse.js",
   "types": "dist/virtual-mouse.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "publish": "npm run build && npm publish"
   },
   "author": "Alexis Bouhet",
   "license": "MIT",
