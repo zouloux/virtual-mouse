@@ -1,0 +1,19 @@
+{
+  "name": "@zouloux/virtual-mouse",
+  "version": "0.1.0",
+  "main": "dist/virtual-mouse.js",
+  "types": "dist/virtual-mouse.d.ts",
+  "private": "false",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "description": "Move a virtual mouse on your website to show features in video.",
+  "dependencies": {
+    "gsap": "^3.12.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target" : "esnext",
+		"module": "esnext",
+		"isolatedModules": false,
+		"useDefineForClassFields" : true,
+		"strict": false,
+		"moduleResolution": "node",
+		"lib": ["DOM", "ESNext"],
+		"allowJs": true,
+		"allowSyntheticDefaultImports": true,
+		"outDir": "dist"
+	},
+	"files": [
+		"src/virtual-mouse.ts"
+	],
+	"exclude": [
+		"node_modules"
+	]
+}
