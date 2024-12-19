@@ -156,7 +156,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		if ( element !== previousElement ) {
 			// Dispatch hover and change style
 			element && styler && styler.toggleStyle(element, ':hover', true);
-			element?.dispatchEvent( createMouseEvent('mouseover') )
+			element?.dispatchEvent( createMouseEvent('mouseenter') )
 			// Dispatch mouse leave and revert style
 			previousElement && styler && styler.toggleStyle(previousElement, ':hover', false);
 			previousElement?.dispatchEvent( createMouseEvent('mouseleave') )
