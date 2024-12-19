@@ -143,14 +143,6 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			element && console.log( element )
 		}
 	}
-	function isParentOf( parent, child ) {
-		let currentElement = child;
-		while ( currentElement ) {
-			if ( currentElement === parent ) return true;
-			currentElement = currentElement.parentNode;
-		}
-		return false;
-	}
 	function getHoveredElement () {
 		const { x, y } = position
 		return document.elementFromPoint( x, y )
@@ -165,22 +157,39 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			cancelable: true,
 		})
 	}
+	function getParentElementsSet( element:Element ) {
+		const parents = new Set();
+		while ( element ) {
+			parents.add( element );
+			element = element.parentElement;
+		}
+		return parents;
+	}
+	function differenceBetweenSets( setA, setB ) {
+		const difference = new Set();
+		setA.forEach( item => {
+			if ( !setB.has( item ) ) {
+				difference.add( item );
+			}
+		});
+		return difference;
+	}
 	function updateHoverState () {
 		const element = getHoveredElement()
 		if ( element !== previousElement ) {
 			log("updateHoverState", {}, element)
-			// Dispatch mouse enter and change style
-			element && styler && styler.toggleStyle(element, ':hover', true);
-			element?.dispatchEvent( createMouseEvent('mouseenter', false) )
-			// Dispatch mouse leave and revert style
-			// Do not trigger mouseleave if the new target is a children of the previous
-			if (
-				(previousElement && element && !isParentOf(previousElement, element))
-				|| (previousElement && !element)
-			) {
-				previousElement && styler && styler.toggleStyle(previousElement, ':hover', false);
-				previousElement?.dispatchEvent( createMouseEvent('mouseleave', false) )
-			}
+			const parentSet = getParentElementsSet( element )
+			const previousParentSet = getParentElementsSet( previousElement )
+			const areNewHovers = differenceBetweenSets(parentSet, previousParentSet)
+			areNewHovers.forEach( (element:Element) => {
+				styler && styler.toggleStyle(element, ':hover', true);
+				element?.dispatchEvent( createMouseEvent('mouseenter', false) )
+			})
+			const areOldHovers = differenceBetweenSets(previousParentSet, parentSet)
+			areOldHovers.forEach( (element:Element) => {
+				styler && styler.toggleStyle(element, ':hover', false);
+				element?.dispatchEvent( createMouseEvent('mouseleave', false) )
+			})
 		}
 		previousElement = element
 		if ( element )
