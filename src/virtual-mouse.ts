@@ -22,10 +22,10 @@ type IInitOptions = {
 	preventMouseWheel	?:boolean
 }
 
-// ----------------------------------------------------------------------------- LOAD SCRIPT HELPER
+// -----------------------------------------------------------------------------
 async function loadScriptAsync( url:string ) {
   return new Promise(( resolve, reject ) => {
-    const script = document.createElement( 'script' );
+    const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = url;
     script.onload = resolve;
@@ -122,49 +122,77 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	// To detect hover changes
 	let previousElement
 
+	// Global speed
+	let speed = 1
+
 	// --------------------------------------------------------------------------- HACK HOVERS
 	let styler
 	async function initStyler () {
-		await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
+		// @ts-ignore
+		if (!('PseudoStyler' in window))
+			await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
 		// @ts-ignore
 		styler = new PseudoStyler()
 		await styler.loadDocumentStyles()
 	}
 
 	// --------------------------------------------------------------------------- PRIVATES
+	function log (method:string, object:any, element?:any) {
+		if ( verbose ) {
+			console.info(`${method} - ${JSON.stringify(object)}`)
+			element && console.log( element )
+		}
+	}
+	function isParentOf( parent, child ) {
+		let currentElement = child;
+		while ( currentElement ) {
+			if ( currentElement === parent ) return true;
+			currentElement = currentElement.parentNode;
+		}
+		return false;
+	}
 	function getHoveredElement () {
 		const { x, y } = position
 		return document.elementFromPoint( x, y )
 	}
-	function createMouseEvent ( type:string ) {
+	function createMouseEvent ( type:string, bubbles:boolean = true ) {
 		const { x, y } = position
 		return new MouseEvent( type, {
 			clientX: x,
 			clientY: y,
 			view: window,
-			bubbles: true,
+			bubbles,
 			cancelable: true,
 		})
 	}
+	function updateHoverState () {
+		const element = getHoveredElement()
+		if ( element !== previousElement ) {
+			log("updateHoverState", {}, element)
+			// Dispatch mouse enter and change style
+			element && styler && styler.toggleStyle(element, ':hover', true);
+			element?.dispatchEvent( createMouseEvent('mouseenter', false) )
+			// Dispatch mouse leave and revert style
+			// Do not trigger mouseleave if the new target is a children of the previous
+			if (
+				(previousElement && element && !isParentOf(previousElement, element))
+				|| (previousElement && !element)
+			) {
+				previousElement && styler && styler.toggleStyle(previousElement, ':hover', false);
+				previousElement?.dispatchEvent( createMouseEvent('mouseleave', false) )
+			}
+		}
+		previousElement = element
+		if ( element )
+			element.dispatchEvent( createMouseEvent('mousemove') )
+	}
 	function updatePosition () {
 		gsap.to(mouseElement, {
-			duration: moveDamping,
+			duration: moveDamping * (1 / speed),
 			x: position.x,
 			y: position.y,
 		})
-		const element = getHoveredElement()
-		if ( element !== previousElement ) {
-			// Dispatch hover and change style
-			element && styler && styler.toggleStyle(element, ':hover', true);
-			element?.dispatchEvent( createMouseEvent('mouseenter') )
-			// Dispatch mouse leave and revert style
-			previousElement && styler && styler.toggleStyle(previousElement, ':hover', false);
-			previousElement?.dispatchEvent( createMouseEvent('mouseleave') )
-		}
-		previousElement = element
-		if ( !element )
-			return
-		element.dispatchEvent( createMouseEvent('mousemove') )
+		updateHoverState()
 	}
 	function getScrollableParent (node:Element) {
     while (node && node !== document.body) {
@@ -180,13 +208,6 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
     return document.scrollingElement ?? document.documentElement;
 	}
 
-	const log = (method:string, object:any, element?:any) => {
-		if ( verbose ) {
-			console.info(`${method} - ${JSON.stringify(object)}`)
-			element && console.log( element )
-		}
-	}
-
 	// --------------------------------------------------------------------------- PUBLIC API
 	return {
 		// Get mouse element to tweak it externally
@@ -199,9 +220,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		// Go to a screen absolute position
 		async to ( x:number, y:number, options?:IAnimateOptions ) {
 			log("to", {x, y, ...options})
+			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(position, {
-				...defaultAnimateOptions, ...options,
-				x, y,
+				...o, x, y,
+				duration: o.duration * (1 / speed),
 				onUpdate: updatePosition
 			})
 		},
@@ -209,8 +231,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		// Move to a screen relative position
 		async move ( x:number, y:number, options?:IAnimateOptions ) {
 			log("move", {x, y, ...options})
+			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(position, {
-				...defaultAnimateOptions, ...options,
+				...o,
+				duration: o.duration * (1 / speed),
 				x: `+=${x}`,
 				y: `+=${y}`,
 				onUpdate: updatePosition
@@ -226,17 +250,22 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		// Hide virtual mouse
 		async hide ( options?:IAnimateOptions ) {
 			log("hide", options)
+			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(mouseElement, {
-				...defaultAnimateOptions, ...options,
+				...o,
+				duration: o.duration * (1 / speed),
 				opacity: 0,
+				onUpdate: updatePosition
 			})
 		},
 
 		// Show virtual mouse
 		async show ( options?:IAnimateOptions ) {
 			log("show", options)
+			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(mouseElement, {
-				...defaultAnimateOptions, ...options,
+				...o,
+				duration: o.duration * (1 / speed),
 				opacity: 1,
 			})
 		},
@@ -245,16 +274,16 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		async click ( options?:IAnimateOptions ) {
 			const element = getHoveredElement()
 			log("click", options, element)
-			const localOptions = { ...defaultAnimateOptions, ...options }
+			const o = { ...defaultAnimateOptions, ...options }
 			await gsap.to(mouseElement, {
 				ease: 'power4.out',
-				duration: .3 * localOptions.duration,
+				duration: .3 * o.duration * (1 / speed),
 				scale: .8,
 			})
 			element?.dispatchEvent( createMouseEvent("click") )
 			await gsap.to(mouseElement, {
 				ease: 'power2.inOut',
-				duration: .4 * localOptions.duration,
+				duration: .4 * o.duration * (1 / speed),
 				scale: 1,
 			})
 		},
@@ -266,8 +295,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			log("scrollTo", {x, y, ...options}, scrollableElement)
 			if ( !scrollableElement )
 				return
+			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(scrollableElement, {
-				...defaultAnimateOptions, ...options,
+				...o,
+				duration: o.duration * (1 / speed),
 				scrollLeft: x,
 				scrollTop: y,
 			})
@@ -280,15 +311,26 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			log("scroll", {x, y, ...options}, scrollableElement)
 			if ( !scrollableElement )
 				return
+						const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(scrollableElement, {
-				...defaultAnimateOptions, ...options,
+				...o,
+				duration: o.duration * (1 / speed),
 				scrollLeft: `+=${x}`,
 				scrollTop: `+=${y}`,
+				onUpdate: updateHoverState,
 			})
+		},
+
+		speed (value:number) {
+			log("speed", {value})
+			if ( value <= 0 || isNaN( value ) )
+				return
+			speed = value
 		},
 
 		// Destroy virtual mouse
 		dispose () {
+			log("dispose", {})
 			overrideStyle && overrideStyle.remove()
 			mouseElement.remove()
 			mouseElement = null
