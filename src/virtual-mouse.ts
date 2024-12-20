@@ -51,6 +51,18 @@ const hideCursorCSS = `
 	}
 `
 
+// ----------------------------------------------------------------------------- REACT EVENT NAMES
+const reactEventsMap = {
+	'mouseenter' 	: 'onMouseEnter',
+	'mouseleave' 	: 'onMouseLeave',
+	'mousedown' 	: 'onMouseDown',
+	'mouseup' 		: 'onMouseUp',
+	'mousemove' 	: 'onMouseMove',
+	'change' 			: 'onChange',
+	'keydown' 		: 'onKeyDown',
+	'keyup' 			: 'onKeyUp',
+}
+
 export function createVirtualMouse ( options:IInitOptions = {} ) {
 
 	// --------------------------------------------------------------------------- INIT
@@ -118,6 +130,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 
 	// Mouse position, screen relative
 	const position:IPoint = { x:0, y:0 }
+	const dampedPosition:IPoint = { x:0, y:0 }
 
 	// To detect hover changes
 	let previousElement
@@ -125,16 +138,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	// Global speed
 	let speed = 1
 
-	// --------------------------------------------------------------------------- HACK HOVERS
+	// Styler object to hack hovers
 	let styler
-	async function initStyler () {
-		// @ts-ignore
-		if (!('PseudoStyler' in window))
-			await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
-		// @ts-ignore
-		styler = new PseudoStyler()
-		await styler.loadDocumentStyles()
-	}
+
+	let reactPropsKey
 
 	// --------------------------------------------------------------------------- PRIVATES
 	function log (method:string, object:any, element?:any) {
@@ -143,12 +150,40 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			element && console.log( element )
 		}
 	}
+	function reactSyntheticEvent (element:Element, event:Event) {
+		if ( !reactPropsKey )
+			return
+		const property = reactEventsMap[ event.type ]
+		if ( !property )
+			return
+		element[property]?.({
+			type: event.type,
+			target: event.target,
+			currentTarget: event.currentTarget,
+			bubbles: event.bubbles,
+			cancelable: event.cancelable,
+			defaultPrevented: event.defaultPrevented,
+			eventPhase: event.eventPhase,
+			isTrusted: event.isTrusted,
+			nativeEvent: event,
+			preventDefault() {
+				event.preventDefault()
+			},
+			isDefaultPrevented() {
+				return false
+			},
+			stopPropagation() {
+				event.stopPropagation()
+			},
+			persist() {},
+		})
+	}
 	function getHoveredElement () {
-		const { x, y } = position
+		const { x, y } = dampedPosition
 		return document.elementFromPoint( x, y )
 	}
 	function createMouseEvent ( type:string, bubbles:boolean = true ) {
-		const { x, y } = position
+		const { x, y } = dampedPosition
 		return new MouseEvent( type, {
 			clientX: x,
 			clientY: y,
@@ -176,6 +211,13 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 	}
 	function updateHoverState () {
 		const element = getHoveredElement()
+
+		if ( element ) {
+			const event = createMouseEvent('mousemove', true)
+			reactSyntheticEvent(element, event)
+			element.dispatchEvent( event )
+		}
+
 		if ( element !== previousElement ) {
 			log("updateHoverState", {}, element)
 			const parentSet = getParentElementsSet( element )
@@ -183,25 +225,34 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			const areNewHovers = differenceBetweenSets(parentSet, previousParentSet)
 			areNewHovers.forEach( (element:Element) => {
 				styler && styler.toggleStyle(element, ':hover', true);
-				element?.dispatchEvent( createMouseEvent('mouseenter', false) )
+				const event = createMouseEvent('mouseenter', false)
+				// reactSyntheticEvent(element, event)
+				element.dispatchEvent( event )
 			})
 			const areOldHovers = differenceBetweenSets(previousParentSet, parentSet)
 			areOldHovers.forEach( (element:Element) => {
 				styler && styler.toggleStyle(element, ':hover', false);
-				element?.dispatchEvent( createMouseEvent('mouseleave', false) )
+				const event = createMouseEvent('mouseleave', false)
+				// reactSyntheticEvent(element, event)
+				element.dispatchEvent( event )
 			})
 		}
 		previousElement = element
-		if ( element )
-			element.dispatchEvent( createMouseEvent('mousemove') )
 	}
 	function updatePosition () {
-		gsap.to(mouseElement, {
+		gsap.to(dampedPosition, {
 			duration: moveDamping * (1 / speed),
 			x: position.x,
 			y: position.y,
+			overwrite: true,
+			onUpdate: () => {
+				gsap.set(mouseElement, {
+					x: dampedPosition.x,
+					y: dampedPosition.y,
+				})
+				updateHoverState()
+			}
 		})
-		updateHoverState()
 	}
 	function getScrollableParent (node:Element) {
     while (node && node !== document.body) {
@@ -223,7 +274,20 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		get mouseElement () { return mouseElement },
 
 		async initHoversHack () {
-			await initStyler()
+			// @ts-ignore
+			if (!('PseudoStyler' in window))
+				await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
+			// @ts-ignore
+			styler = new PseudoStyler()
+			await styler.loadDocumentStyles()
+		},
+
+		initReactEvents ( element:Element ) {
+			const key = Object.keys(element).find( k => k.startsWith("__reactProps") )
+			if ( typeof element[key] !== "object" )
+				return
+			reactPropsKey = key
+			log("initReactEvents", {reactPropsKey}, element)
 		},
 
 		// Go to a screen absolute position
