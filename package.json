@@ -1,10 +1,11 @@
 {
   "name": "@zouloux/virtual-mouse",
-  "version": "0.1.12",
+  "version": "0.2.0",
   "main": "dist/virtual-mouse.js",
   "types": "dist/virtual-mouse.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "demo": "npx @zouloux/static-http ./ -p 8080 & open http://localhost:8080/demo"
   },
   "author": "Alexis Bouhet",
   "license": "MIT",

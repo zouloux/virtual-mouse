@@ -1,4 +1,15 @@
-import { gsap } from 'gsap'
+// Import GSAP from compiled or browser
+let gsap:GSAP;
+try {
+	const module = await import('gsap')
+	gsap = module.gsap
+}
+catch ( e ) {
+	console.log("GSAP not found in local dependencies. Loading from esm.sh...")
+	// @ts-ignore
+	const module = await import('https://esm.sh/gsap')
+	gsap = module.gsap
+}
 
 // ----------------------------------------------------------------------------- TYPES
 type IPoint = {
@@ -13,13 +24,19 @@ type IAnimateOptions = {
 }
 
 type IInitOptions = {
-	moveDamping				?:number
-	mouseStyle				?:Partial<CSSStyleDeclaration>
+	// moveDamping				?:number // fixme : not stable
+	// Hide scroll bar, even if moving, can break rendering
 	hideScrollbar			?:boolean
+	// Hide user cursor
 	hideCursor				?:boolean
-	defaultAnimate		?:IAnimateOptions
+	// Print actions and parameters in console
 	verbose						?:boolean
+	// Block user mouse wheel inputs
 	preventMouseWheel	?:boolean
+	// Default animation parameters
+	defaultAnimate		?:IAnimateOptions
+	// Custom mouse style override
+	mouseStyle				?:Partial<CSSStyleDeclaration>
 }
 
 // -----------------------------------------------------------------------------
@@ -55,19 +72,18 @@ const hideCursorCSS = `
 const reactEventsMap = {
 	'mouseenter' 	: 'onMouseEnter',
 	'mouseleave' 	: 'onMouseLeave',
-	'mousedown' 	: 'onMouseDown',
-	'mouseup' 		: 'onMouseUp',
 	'mousemove' 	: 'onMouseMove',
-	'change' 			: 'onChange',
-	'keydown' 		: 'onKeyDown',
-	'keyup' 			: 'onKeyUp',
+	//'mousedown' 	: 'onMouseDown',
+	//'mouseup' 		: 'onMouseUp',
+	//'change' 			: 'onChange',
+	//'keydown' 		: 'onKeyDown',
+	//'keyup' 			: 'onKeyUp',
 }
 
-export function createVirtualMouse ( options:IInitOptions = {} ) {
-
+export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 	// --------------------------------------------------------------------------- INIT
 	// Default options
-	const moveDamping = options.moveDamping ?? 0
+	// const moveDamping = options.moveDamping ?? 0
 	const verbose = options.verbose ?? false
 	// Default animation
 	const defaultAnimateOptions:IAnimateOptions = {
@@ -143,6 +159,30 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 
 	let reactPropsKey
 
+
+	// --------------------------------------------------------------------------- MOUSE POSITION HELPER
+	const realMousePosition:IPoint = { x: 0, y : 0}
+	function mouseMoveHandler ( event:MouseEvent ) {
+		realMousePosition.x = event.clientX
+		realMousePosition.y = event.clientY
+	}
+	function metaKeyDown ( event:KeyboardEvent ) {
+		const isMetaKeyOnly = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+		const isAltKeyOnly = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey
+		if ( isMetaKeyOnly ) {
+			console.log(`await mouse.to(${realMousePosition.x}, ${realMousePosition.y})`)
+		}
+		else if ( isAltKeyOnly ) {
+			console.log(`await mouse.scrollTo(0, ${window.scrollY})`)
+		}
+	}
+
+	document.addEventListener('mousemove', mouseMoveHandler)
+	document.addEventListener('keydown',  metaKeyDown)
+
+	console.log("[CMD] to print mouse position")
+	console.log("[ALT] to print scroll position")
+
 	// --------------------------------------------------------------------------- PRIVATES
 	function log (method:string, object:any, element?:any) {
 		if ( verbose ) {
@@ -150,15 +190,10 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			element && console.log( element )
 		}
 	}
-	function reactSyntheticEvent (element:Element, event:Event) {
-		if ( !reactPropsKey )
-			return
-		const property = reactEventsMap[ event.type ]
-		if ( !property )
-			return
-		element[property]?.({
+	function dispatchSyntheticEvent ( element:Element, property:string, event:Event ) {
+		element[reactPropsKey]?.[property]?.({
 			type: event.type,
-			target: event.target,
+			target: element,
 			currentTarget: event.currentTarget,
 			bubbles: event.bubbles,
 			cancelable: event.cancelable,
@@ -177,6 +212,22 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			},
 			persist() {},
 		})
+	}
+	function reactSyntheticEvent (element:Element, event:Event) {
+		if ( !reactPropsKey )
+			return
+		const property = reactEventsMap[ event.type ]
+		if ( !property )
+			return
+		if ( event.bubbles ) {
+			const elements = getParentElementsSet( element )
+			elements.forEach( el =>
+				dispatchSyntheticEvent(el as Element, property, event)
+			)
+		}
+		else {
+			dispatchSyntheticEvent(element, property, event)
+		}
 	}
 	function getHoveredElement () {
 		const { x, y } = dampedPosition
@@ -226,21 +277,26 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			areNewHovers.forEach( (element:Element) => {
 				styler && styler.toggleStyle(element, ':hover', true);
 				const event = createMouseEvent('mouseenter', false)
-				// reactSyntheticEvent(element, event)
+				reactSyntheticEvent(element, event)
 				element.dispatchEvent( event )
 			})
 			const areOldHovers = differenceBetweenSets(previousParentSet, parentSet)
 			areOldHovers.forEach( (element:Element) => {
 				styler && styler.toggleStyle(element, ':hover', false);
 				const event = createMouseEvent('mouseleave', false)
-				// reactSyntheticEvent(element, event)
+				reactSyntheticEvent(element, event)
 				element.dispatchEvent( event )
 			})
 		}
 		previousElement = element
 	}
 	function updatePosition () {
-		gsap.to(dampedPosition, {
+		gsap.set(mouseElement, {
+			x: dampedPosition.x,
+			y: dampedPosition.y,
+		})
+		updateHoverState()
+		/*gsap.to(dampedPosition, {
 			duration: moveDamping * (1 / speed),
 			x: position.x,
 			y: position.y,
@@ -252,7 +308,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 				})
 				updateHoverState()
 			}
-		})
+		})*/
 	}
 	function getScrollableParent (node:Element) {
     while (node && node !== document.body) {
@@ -283,6 +339,8 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		},
 
 		initReactEvents ( element:Element ) {
+			if ( !element )
+				return
 			const key = Object.keys(element).find( k => k.startsWith("__reactProps") )
 			if ( typeof element[key] !== "object" )
 				return
@@ -322,7 +380,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 
 		// Hide virtual mouse
 		async hide ( options?:IAnimateOptions ) {
-			log("hide", options)
+			log("hide", options ?? {})
 			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(mouseElement, {
 				...o,
@@ -334,7 +392,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 
 		// Show virtual mouse
 		async show ( options?:IAnimateOptions ) {
-			log("show", options)
+			log("show", options ?? {})
 			const o = { ...defaultAnimateOptions, ...options }
 			return gsap.to(mouseElement, {
 				...o,
@@ -346,7 +404,7 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		// Click
 		async click ( options?:IAnimateOptions ) {
 			const element = getHoveredElement()
-			log("click", options, element)
+			log("click", options ?? {}, element)
 			const o = { ...defaultAnimateOptions, ...options }
 			await gsap.to(mouseElement, {
 				ease: 'power4.out',
@@ -362,8 +420,8 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		},
 
 		// Scroll absolute on the nearest scrollable element
-		async scrollTo ( x:number, y:number, options?:IAnimateOptions ) {
-			const element = getHoveredElement()
+		async scrollTo ( x:number, y:number, options?:IAnimateOptions, element?:Element ) {
+			element ??= getHoveredElement()
 			const scrollableElement = getScrollableParent( element )
 			log("scrollTo", {x, y, ...options}, scrollableElement)
 			if ( !scrollableElement )
@@ -378,8 +436,8 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 		},
 
 		// Scroll relative on the nearest scrollable element
-		async scroll ( x:number, y:number, options?:IAnimateOptions ) {
-			const element = getHoveredElement()
+		async scroll ( x:number, y:number, options?:IAnimateOptions, element?:Element ) {
+			element ??= getHoveredElement()
 			const scrollableElement = getScrollableParent( element )
 			log("scroll", {x, y, ...options}, scrollableElement)
 			if ( !scrollableElement )
@@ -412,6 +470,74 @@ export function createVirtualMouse ( options:IInitOptions = {} ) {
 			})
 			styler = null
 			previousElement = null
+			document.removeEventListener('mousemove', mouseMoveHandler)
+			document.removeEventListener('keyup',  metaKeyDown)
 		}
 	}
+}
+
+// ----------------------------------------------------------------------------- VIRTUAL MOUSE STUDIO
+
+export function createVirtualMouseStudio () {
+	const buffer = [
+		`// url: ${location.href}`,
+		`// viewport: ${window.innerWidth}`,
+		``,
+		`// Init virtual mouse player`,
+		`const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')`,
+		`const mouse = createVirtualMousePlayer({`,
+		`	hideScrollbar: true,`,
+		`	hideCursor: true,`,
+		`	preventMouseWheel: true,`,
+		`	preventMouseWheel: true,`,
+		`})`,
+		`await mouse.initHoversHack()`,
+		`mouse.initReactEvents( document.body.firstChild )`,
+		``,
+	]
+
+	function stop () {
+		const output = buffer.join("\n")
+		navigator.clipboard.writeText(output)
+		console.log("Scene copied to clipboard")
+		window.removeEventListener("mousemove", mouseMoveHandler)
+		document.removeEventListener("click", clickedHandler)
+		window.removeEventListener("keydown", keyboardHandler)
+	}
+
+	const mousePosition:IPoint = { x:0, y: 0 }
+	function mouseMoveHandler ( event:MouseEvent ) {
+		mousePosition.x = event.clientX
+		mousePosition.y = event.clientY
+	}
+	function clickedHandler () {
+		console.log("Click registered")
+		buffer.push(`await mouse.to(${mousePosition.x}, ${mousePosition.y})`)
+		buffer.push(`await mouse.click({ duration: .4 })`)
+		buffer.push(`await mouse.delay(.2)`)
+		buffer.push(``)
+	}
+	function keyboardHandler ( event:KeyboardEvent ) {
+		const isMetaKeyOnly = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+		// const isAltKeyOnly = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey
+		if ( isMetaKeyOnly && event.key === "Escape" ) {
+			event.preventDefault()
+			stop()
+		}
+		else if ( isMetaKeyOnly ) {
+			console.log("Scroll registered")
+			buffer.push(`mouse.to(${mousePosition.x}, ${mousePosition.y})`)
+			buffer.push(`await mouse.scrollTo(0, ${window.scrollY})`)
+			buffer.push(`await mouse.delay(.2)`)
+			buffer.push(``)
+		}
+	}
+
+	window.addEventListener("mousemove", mouseMoveHandler)
+	document.addEventListener("click", clickedHandler)
+	window.addEventListener("keydown", keyboardHandler)
+
+	console.log("Virtual Mouse studio started, hit [CMD] + [Escape] to stop export scene.")
+
+	return stop
 }

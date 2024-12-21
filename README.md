@@ -1,14 +1,44 @@
 # Virtual Mouse
 
 Move a virtual mouse on your website to show features in video.
-
 It has `gsap` as only dependency.
+It can be loaded on any website, without access to the source code.
 
 ## How it works
 
 It creates a virtual cursor on the screen, over your website.
-You can move it and click on elements to simulate user interactions.
+You can move it, scroll and click on elements to simulate user interactions.
 It can be useful to create screen captures of your website with a super smooth mouse move.
+
+## Hovers
+Javascript cannot trigger CSS `:hover` pseudo state on DOM elements,
+It can work thanks to [this lib](https://github.com/TSedlar/pseudo-styler) which permit virtual mouse to trigger CSS `:hover` like the user's cursor.
+
+It has a known issue when the `:hover` is inside a media query, it can't be triggered.
+```css
+@media (min-width: 200px) {
+	.test:hover {
+		// Will not work
+	}
+}
+```
+
+To use it : `await mouse.initHoversHack()`
+
+## React
+
+React has its own (and now totally useless) `SyntheticEvents` integration.
+Which prevents javascript based events to be converted to React elements.
+I found a hack to trigger handlers directly on React elements, it may not work on future react version.
+Simply give any React node and the code will find how to communicate `SyntheticEvents` on all React nodes. 
+
+To use it : `mouse.initReactEvents( document.body.firstChild ) // any react node will do`
+
+## TODO
+- Explain how to run anywhere
+- Create an HTML demo
+- Host a demo as mp4
+- Explain how to get positions from cmd and alt
 
 ## Use it on website you don't own
 
@@ -16,12 +46,12 @@ You can use it on websites loaded in chrome, without having to build anything.
 
 Simply open the developer console and load this lib using :
 ```typescript
-import('https://esm.sh/@zouloux/virtual-mouse').then(m => { window.createVirtualMouse = m.createVirtualMouse; console.log("Loaded") })
+const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')
 ```
 
 When loaded, you can start to use it 
 ```typescript
-const mouse = createVirtualMouse()
+const mouse = createVirtualMousePlayer()
 await mouse.delay(.2)
 await mouse.move(400, 400)
 await mouse.delay(.2)
@@ -31,27 +61,38 @@ await mouse.hide()
 mouse.dispose()
 ```
 
-### Current features
+## Example
+
+This and example you can copy and paste in any website's console.
 
 ```typescript
-import { createVirtualMouse } from "@zouloux/virtual-mouse"
-const mouse = createVirtualMouse({
-	// Print actions and parameters
-	verbose: false,
-	// Smooth the mouse move
-	moveDamping: 0,
+import { createVirtualMousePlayer } from "@zouloux/virtual-mouse"
+const mouse = createVirtualMousePlayer({
 	// Hide scroll bar, even if moving, can break rendering
 	hideScrollbar: true,
-	// Hide user cursor, and force it
+	// Hide user cursor
 	hideCursor: true,
+	// Print actions and parameters in console
+	verbose: false,
 	// Block user mouse wheel inputs
 	preventMouseWheel: false,
 	// Default animation parameters
 	defaultAnimate: {
 		duration: 1.0,
 		ease: 'power4.inOut', // gsap easings
-	}
+	},
+  	// Apply custom style on cursor
+	mouseStyle: {
+		transform: "translate(-50%, -50%) scale(2)",
+		border: "2px solid red",
+	},
 })
+
+// Enable hovers hack
+await mouse.initHoversHack()
+
+// Enable React synthetic events compatibility
+mouse.initReactEvents()
 
 // Move mouse to an absolute position in the screen ( not the viewport )
 await mouse.to(250, 250)
@@ -77,19 +118,27 @@ await delay(1)
 // Click on element under virtual mouse
 await mouse.click()
 
+// Scroll and move mouse in the same time
+mouse.to(500, 500, { duration: 1 }) // no await
+await mouse.scroll(0, 500, { duration: 1 })
+
 // Dispose and go back to normal
 mouse.dispose()
 ```
 
-## Hovers
+## Viewport size
 
-If you need to simulate hovers, call
-```typescript
-await mouse.initHoversHack()
+Because all positions are absolute to the viewport :
+When you create a virtual mouse scene, you have to save remember the actual viewport width.
+For example, if you create a first scene in 1440px width, add a comment on top of your scene file :
+
+```javascript
+// Url : /virtual-mouse-demo.html
+// Width: 1440
+import { createVirtualMousePlayer } from "@zouloux/virtual-mouse"
+const mouse = createVirtualMousePlayer({})
+// ...
 ```
-
-This will load [this lib](https://github.com/TSedlar/pseudo-styler) which permit virtual mouse events to trigger real `:hover` pseudo effects.
-
 
 
 ## Next features
@@ -117,7 +166,7 @@ Sounds in WebAudio
 - Type sound
 - Key sound
 
-##### Stage
+##### Studio
 
 Create a tool to register clicks and moves and create code.
 It will have to smooth everything out.
