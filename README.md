@@ -44,6 +44,11 @@ Simply give any React node and the code will find how to communicate `SyntheticE
 
 To use it : `mouse.initReactEvents( document.body.firstChild ) // any react node will do`
 
+#### Scrolls
+
+Its compatible with vertical and horizontal scrolls.
+Horizontal scroll is not supported by the studio but can be used with the `scroll` and `scrollTo` commands. 
+
 #### Dependencies
 
 It has `gsap` as only dependency. Loaded from `esm.sh` if directly in a browser environment.
@@ -172,7 +177,7 @@ The scene will be copied to your clipboard and ready to be pasted to play the sc
 ---
 ## NPM
 
-Use it with NPM on your codebase
+[Available on npm.](https://www.npmjs.com/package/@zouloux/virtual-mouse)
 
 ```bash
 npm i @zouloux/virtual-mouse
