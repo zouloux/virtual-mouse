@@ -5,15 +5,161 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Virtual Mouse Studio</title>
 	<script type="module">
-		// const { createVirtualMouse } = await import('https://esm.sh/@zouloux/virtual-mouse')
-		const { gsap } = await import('https://esm.sh/gsap')
 		const { createVirtualMousePlayer, createVirtualMouseStudio } = await import('../dist/virtual-mouse.js')
 
-		const studio = createVirtualMouseStudio()
-
+		window.startVirtualPlayer = async function () {
+			const mouse = createVirtualMousePlayer({
+				moveDamping: .5,
+				hideScrollbar: true,
+				hideCursor: true,
+				verbose: false,
+				preventMouseWheel: true,
+			})
+			await mouse.initHoversHack();
+			//mouse.initReactEvents( document.body )
+			await mouse.scrollTo(0, 0, { duration: 1 })
+			await mouse.delay(.3)
+			await mouse.to(100, 150, { duration: 1 })
+			await mouse.delay(.3)
+			await mouse.click(.4)
+			await mouse.delay(.3)
+			await mouse.to(50, 400, { duration: 1 })
+			await mouse.scroll(0, 300, { duration: 2 })
+			mouse.to(70, 310, { duration: 1 })
+			await mouse.scrollTo(0, 0, { duration: 1 })
+			await mouse.delay(.3)
+			await mouse.click(.4)
+			mouse.dispose()
+		}
+		window.startVirtualStudio = function () {
+			alert("Open developer console to see instructions.")
+			if ( window.__studio ) {
+				window.__studio.dispose()
+				window.__studio = null
+			}
+			window.__studio = createVirtualMouseStudio()
+		}
+		window.buttonClicked = function () {
+			console.log("Button clicked")
+		}
+		window.buttonMouseHandler = function (event) {
+			console.log(event.type)
+		}
 	</script>
+	<style>
+		.button {
+			position: relative;
+			display: block;
+			width: 200px;
+			height: 200px;
+			background-color: green;
+		}
+		.button:hover {
+			background-color: red;
+		}
+		.button span {
+			position: absolute;
+			inset: 50px;
+			background: purple;
+		}
+		.button span:hover {
+			background: black;
+			color: white;
+		}
+		.hover:hover {
+			background: orange;
+		}
+	</style>
 </head>
 <body>
-
+<div>
+	<button onClick="startVirtualPlayer()">Click here to start Virtual Mouse Demo</button>
+	<button onClick="startVirtualStudio()">Click here to start Virtual Mouse Studio</button>
+	<br/>
+	<br/>
+	<button
+		class="button"
+		onClick="buttonClicked()"
+		onMouseEnter="buttonMouseHandler(event)" onMouseLeave="buttonMouseHandler(event)"
+	>
+		<span>CLICK ME</span>
+	</button>
+	<ul>
+		<li><a href="#test1">open test 1</a></li>
+		<li><a href="#test2">open test 2</a></li>
+		<li><a href="#test3">open test 3</a></li>
+	</ul>
+	<button
+		class="button"
+		onClick="buttonClicked()"
+		onMouseEnter="buttonMouseHandler(event)" onMouseLeave="buttonMouseHandler(event)"
+	>
+		<span>CLICK ME</span>
+	</button>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+	<div class="hover">Hover test</div>
+</div>
 </body>
 </html>

@@ -24,7 +24,6 @@ type IAnimateOptions = {
 }
 
 type IInitOptions = {
-	// moveDamping				?:number // fixme : not stable
 	// Hide scroll bar, even if moving, can break rendering
 	hideScrollbar			?:boolean
 	// Hide user cursor
@@ -80,10 +79,9 @@ const reactEventsMap = {
 	//'keyup' 			: 'onKeyUp',
 }
 
-export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
+export function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 	// --------------------------------------------------------------------------- INIT
 	// Default options
-	// const moveDamping = options.moveDamping ?? 0
 	const verbose = options.verbose ?? false
 	// Default animation
 	const defaultAnimateOptions:IAnimateOptions = {
@@ -146,7 +144,6 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 
 	// Mouse position, screen relative
 	const position:IPoint = { x:0, y:0 }
-	const dampedPosition:IPoint = { x:0, y:0 }
 
 	// To detect hover changes
 	let previousElement
@@ -157,31 +154,8 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 	// Styler object to hack hovers
 	let styler
 
+	// The React key found to fake SyntheticEvents
 	let reactPropsKey
-
-
-	// --------------------------------------------------------------------------- MOUSE POSITION HELPER
-	const realMousePosition:IPoint = { x: 0, y : 0}
-	function mouseMoveHandler ( event:MouseEvent ) {
-		realMousePosition.x = event.clientX
-		realMousePosition.y = event.clientY
-	}
-	function metaKeyDown ( event:KeyboardEvent ) {
-		const isMetaKeyOnly = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
-		const isAltKeyOnly = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey
-		if ( isMetaKeyOnly ) {
-			console.log(`await mouse.to(${realMousePosition.x}, ${realMousePosition.y})`)
-		}
-		else if ( isAltKeyOnly ) {
-			console.log(`await mouse.scrollTo(0, ${window.scrollY})`)
-		}
-	}
-
-	document.addEventListener('mousemove', mouseMoveHandler)
-	document.addEventListener('keydown',  metaKeyDown)
-
-	console.log("[CMD] to print mouse position")
-	console.log("[ALT] to print scroll position")
 
 	// --------------------------------------------------------------------------- PRIVATES
 	function log (method:string, object:any, element?:any) {
@@ -230,11 +204,11 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 		}
 	}
 	function getHoveredElement () {
-		const { x, y } = dampedPosition
+		const { x, y } = position
 		return document.elementFromPoint( x, y )
 	}
 	function createMouseEvent ( type:string, bubbles:boolean = true ) {
-		const { x, y } = dampedPosition
+		const { x, y } = position
 		return new MouseEvent( type, {
 			clientX: x,
 			clientY: y,
@@ -292,23 +266,10 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 	}
 	function updatePosition () {
 		gsap.set(mouseElement, {
-			x: dampedPosition.x,
-			y: dampedPosition.y,
-		})
-		updateHoverState()
-		/*gsap.to(dampedPosition, {
-			duration: moveDamping * (1 / speed),
 			x: position.x,
 			y: position.y,
-			overwrite: true,
-			onUpdate: () => {
-				gsap.set(mouseElement, {
-					x: dampedPosition.x,
-					y: dampedPosition.y,
-				})
-				updateHoverState()
-			}
-		})*/
+		})
+		updateHoverState()
 	}
 	function getScrollableParent (node:Element) {
     while (node && node !== document.body) {
@@ -470,8 +431,6 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 			})
 			styler = null
 			previousElement = null
-			document.removeEventListener('mousemove', mouseMoveHandler)
-			document.removeEventListener('keyup',  metaKeyDown)
 		}
 	}
 }
@@ -479,26 +438,27 @@ export async function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 // ----------------------------------------------------------------------------- VIRTUAL MOUSE STUDIO
 
 export function createVirtualMouseStudio () {
-	const buffer = [
-		`// url: ${location.href}`,
-		`// viewport: ${window.innerWidth}`,
-		``,
-		`// Init virtual mouse player`,
-		`const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')`,
-		`const mouse = createVirtualMousePlayer({`,
-		`	hideScrollbar: true,`,
-		`	hideCursor: true,`,
-		`	preventMouseWheel: true,`,
-		`	preventMouseWheel: true,`,
-		`})`,
-		`await mouse.initHoversHack()`,
-		`mouse.initReactEvents( document.body.firstChild )`,
-		``,
-	]
+	const buffer = []
 
 	function stop () {
-		const output = buffer.join("\n")
-		navigator.clipboard.writeText(output)
+		const sceneOutput = [
+			`// url: ${location.href}`,
+			`// viewport: ${window.innerWidth}`,
+			``,
+			`// Init virtual mouse player`,
+			`const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')`,
+			`const mouse = createVirtualMousePlayer({`,
+			`	hideScrollbar: true,`,
+			`	hideCursor: true,`,
+			`	preventMouseWheel: true,`,
+			`	preventMouseWheel: true,`,
+			`})`,
+			`await mouse.initHoversHack()`,
+			`mouse.initReactEvents( document.body.firstChild )`,
+			``,
+			...buffer
+		].join("\n")
+		navigator.clipboard.writeText(sceneOutput)
 		console.log("Scene copied to clipboard")
 		window.removeEventListener("mousemove", mouseMoveHandler)
 		document.removeEventListener("click", clickedHandler)
@@ -510,6 +470,7 @@ export function createVirtualMouseStudio () {
 		mousePosition.x = event.clientX
 		mousePosition.y = event.clientY
 	}
+
 	function clickedHandler () {
 		console.log("Click registered")
 		buffer.push(`await mouse.to(${mousePosition.x}, ${mousePosition.y})`)
@@ -517,9 +478,9 @@ export function createVirtualMouseStudio () {
 		buffer.push(`await mouse.delay(.2)`)
 		buffer.push(``)
 	}
+
 	function keyboardHandler ( event:KeyboardEvent ) {
 		const isMetaKeyOnly = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
-		// const isAltKeyOnly = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey
 		if ( isMetaKeyOnly && event.key === "Escape" ) {
 			event.preventDefault()
 			stop()

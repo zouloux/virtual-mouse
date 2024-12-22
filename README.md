@@ -1,16 +1,22 @@
 # Virtual Mouse
 
-Move a virtual mouse on your website to show features in video.
-It has `gsap` as only dependency.
+Move a virtual cursor on your website to show features in **screencasts** with a **smooth cursor interaction**.
+
 It can be loaded on any website, without access to the source code.
 
+Virtual Mouse also has its **own studio** to create scene from user actions.
+
+- [How it works](#how-it-works)
+- [How it works](#how-it-works)
+
+---
 ## How it works
 
 It creates a virtual cursor on the screen, over your website.
 You can move it, scroll and click on elements to simulate user interactions.
 It can be useful to create screen captures of your website with a super smooth mouse move.
 
-## Hovers
+#### Hovers
 Javascript cannot trigger CSS `:hover` pseudo state on DOM elements,
 It can work thanks to [this lib](https://github.com/TSedlar/pseudo-styler) which permit virtual mouse to trigger CSS `:hover` like the user's cursor.
 
@@ -25,7 +31,7 @@ It has a known issue when the `:hover` is inside a media query, it can't be trig
 
 To use it : `await mouse.initHoversHack()`
 
-## React
+#### React
 
 React has its own (and now totally useless) `SyntheticEvents` integration.
 Which prevents javascript based events to be converted to React elements.
@@ -34,13 +40,12 @@ Simply give any React node and the code will find how to communicate `SyntheticE
 
 To use it : `mouse.initReactEvents( document.body.firstChild ) // any react node will do`
 
-## TODO
-- Explain how to run anywhere
-- Create an HTML demo
-- Host a demo as mp4
-- Explain how to get positions from cmd and alt
+#### Dependencies
 
-## Use it on website you don't own
+It has `gsap` as only dependency. Loaded from `esm.sh` if directly in a browser environment.
+
+---
+## Use it, even on websites you don't own
 
 You can use it on websites loaded in chrome, without having to build anything.
 
@@ -141,6 +146,26 @@ const mouse = createVirtualMousePlayer({})
 ```
 
 
+---
+## Virtual Mouse Studio
+
+The studio can be helpful to record user actions and convert them to a Virtual Mouse Scene.
+
+Paste this in the developer console on the website you want to animate :
+
+```
+const { createVirtualMouseStudio } = await import('https://esm.sh/@zouloux/virtual-mouse')
+createVirtualMouseStudio()
+```
+
+Then, move your cursor on the website, and click around.
+- To register a scroll, use `[CMD]`.
+- To finish your scene, hit `[CMD]` + `[Escape]` key on your keyboard.
+
+The scene will be copied to your clipboard and ready to be pasted to play the scene.
+
+
+---
 ## Next features
 
 ##### Move cursor to an element, centered into it
