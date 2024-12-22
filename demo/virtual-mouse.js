@@ -379,10 +379,8 @@ export function createVirtualMouseStudio() {
     const buffer = [];
     function stop() {
         const sceneOutput = [
-            `// url: ${location.href}`,
-            `// viewport: ${window.innerWidth}`,
-            ``,
-            `// Init virtual mouse player`,
+            `// Url: ${location.href}`,
+            `// Viewport: ${window.innerWidth}x${window.innerHeight}`,
             `const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')`,
             `const mouse = createVirtualMousePlayer({`,
             `	hideScrollbar: true,`,
@@ -406,9 +404,17 @@ export function createVirtualMouseStudio() {
         mousePosition.x = event.clientX;
         mousePosition.y = event.clientY;
     }
+    let previousRegisteredScroll = window.scrollY;
     function clickedHandler() {
         console.log("Click registered");
-        buffer.push(`await mouse.to(${mousePosition.x}, ${mousePosition.y})`);
+        if (window.scrollY !== previousRegisteredScroll) {
+            previousRegisteredScroll = window.scrollY;
+            buffer.push(`mouse.to(${mousePosition.x}, ${mousePosition.y})`);
+            buffer.push(`await mouse.scrollTo(0, ${previousRegisteredScroll})`);
+        }
+        else {
+            buffer.push(`await mouse.to(${mousePosition.x}, ${mousePosition.y})`);
+        }
         buffer.push(`await mouse.click({ duration: .4 })`);
         buffer.push(`await mouse.delay(.2)`);
         buffer.push(``);
@@ -420,9 +426,10 @@ export function createVirtualMouseStudio() {
             stop();
         }
         else if (isMetaKeyOnly) {
+            previousRegisteredScroll = window.scrollY;
             console.log("Scroll registered");
             buffer.push(`mouse.to(${mousePosition.x}, ${mousePosition.y})`);
-            buffer.push(`await mouse.scrollTo(0, ${window.scrollY})`);
+            buffer.push(`await mouse.scrollTo(0, ${previousRegisteredScroll})`);
             buffer.push(`await mouse.delay(.2)`);
             buffer.push(``);
         }
