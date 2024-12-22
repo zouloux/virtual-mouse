@@ -1,6 +1,6 @@
 {
   "name": "@zouloux/virtual-mouse",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "main": "dist/virtual-mouse.js",
   "types": "dist/virtual-mouse.d.ts",
   "scripts": {

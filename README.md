@@ -143,12 +143,13 @@ mouse.dispose()
 ## Viewport size
 
 Because all positions are absolute to the viewport :
-When you create a virtual mouse scene, you have to save remember the actual viewport width.
-For example, if you create a first scene in 1440px width, add a comment on top of your scene file :
+When you create a virtual mouse scene, you have to save remember the actual viewport size.
+
+> The Studio will add a comment with the actual viewport size
 
 ```javascript
-// Url : /virtual-mouse-demo.html
-// Width: 1440
+// Url /virtual-mouse-demo.html
+// Viewport: 1440x720
 import { createVirtualMousePlayer } from "@zouloux/virtual-mouse"
 const mouse = createVirtualMousePlayer({})
 // ...
