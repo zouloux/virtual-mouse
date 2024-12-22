@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Virtual Mouse Studio</title>
 	<script type="module">
-		const { createVirtualMousePlayer, createVirtualMouseStudio } = await import('../dist/virtual-mouse.js')
+		const { createVirtualMousePlayer, createVirtualMouseStudio } = await import('./virtual-mouse.js')
 
 		window.startVirtualPlayer = async function () {
 			const mouse = createVirtualMousePlayer({
@@ -72,7 +72,7 @@
 	</style>
 </head>
 <body>
-<div>
+<div style="width: 500px">
 	<button onClick="startVirtualPlayer()">Click here to start Virtual Mouse Demo</button>
 	<button onClick="startVirtualStudio()">Click here to start Virtual Mouse Studio</button>
 	<br/>

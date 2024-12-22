@@ -498,7 +498,11 @@ export function createVirtualMouseStudio () {
 	document.addEventListener("click", clickedHandler)
 	window.addEventListener("keydown", keyboardHandler)
 
-	console.log("Virtual Mouse studio started, hit [CMD] + [Escape] to stop export scene.")
+	console.log("Virtual Mouse Studio started")
+	console.log("- Recording mouse moves")
+	console.log("- Click to register a click")
+	console.log("- Hit [CMD] to register a scroll")
+	console.log("- Hit [CMD] + [Escape] to stop recording export scene.")
 
 	return stop
 }

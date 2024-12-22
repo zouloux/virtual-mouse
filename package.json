@@ -4,8 +4,8 @@
   "main": "dist/virtual-mouse.js",
   "types": "dist/virtual-mouse.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "demo": "npx @zouloux/static-http ./ -p 8080 & open http://localhost:8080/demo"
+    "build": "tsc -p tsconfig.json && cp dist/virtual-mouse.js demo/",
+    "demo": "npx @zouloux/static-http ./demo -p 8080 & open http://localhost:8080"
   },
   "author": "Alexis Bouhet",
   "license": "MIT",

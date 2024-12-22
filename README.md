@@ -6,8 +6,12 @@ It can be loaded on any website, without access to the source code.
 
 Virtual Mouse also has its **own studio** to create scene from user actions.
 
+- [Try Demo](https://zouloux.github.io/virtual-mouse/)
 - [How it works](#how-it-works)
-- [How it works](#how-it-works)
+- [Example](#example)
+- [Virtual Mouse Studio](#virtual-mouse-studio)
+- [NPM](#npm)
+- [Test it](#test-it)
 
 ---
 ## How it works
@@ -71,7 +75,7 @@ mouse.dispose()
 This and example you can copy and paste in any website's console.
 
 ```typescript
-import { createVirtualMousePlayer } from "@zouloux/virtual-mouse"
+const { createVirtualMousePlayer } = await import('https://esm.sh/@zouloux/virtual-mouse')
 const mouse = createVirtualMousePlayer({
 	// Hide scroll bar, even if moving, can break rendering
 	hideScrollbar: true,
@@ -164,6 +168,33 @@ Then, move your cursor on the website, and click around.
 
 The scene will be copied to your clipboard and ready to be pasted to play the scene.
 
+
+---
+## NPM
+
+Use it with NPM on your codebase
+
+```bash
+npm i @zouloux/virtual-mouse
+```
+
+```typescript
+import { createVirtualMousePlayer, createVirtualMouseStudio } from "@zouloux/virtual-mouse"
+// ...
+```
+
+---
+## Test it
+
+##### Clone
+- `git clone git@github.com:zouloux/virtual-mouse.git`
+- `cd virtual-mouse`
+
+##### Build
+- `npm run build`
+ 
+##### Start demo on port 8080
+- `npm run demo`
 
 ---
 ## Next features
