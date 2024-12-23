@@ -6,6 +6,7 @@ It can be loaded on any website, without access to the source code.
 
 Virtual Mouse also has its **own studio** to create scene from user actions.
 
+- [See video](https://zouloux.github.io/virtual-mouse/example.mp4)
 - [Try Demo](https://zouloux.github.io/virtual-mouse/)
 - [How it works](#how-it-works)
 - [Example](#example)
