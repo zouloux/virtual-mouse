@@ -6,13 +6,14 @@ It can be loaded on any website, without access to the source code.
 
 Virtual Mouse also has its **own studio** to create scene from user actions.
 
-- [See video](https://zouloux.github.io/virtual-mouse/example.mp4)
-- [Try Demo](https://zouloux.github.io/virtual-mouse/)
-- [How it works](#how-it-works)
-- [Example](#example)
-- [Virtual Mouse Studio](#virtual-mouse-studio)
-- [NPM](#npm)
-- [Test it](#test-it)
+- [See video ↗](https://zouloux.github.io/virtual-mouse/example.mp4)
+- [Try Demo ↗](https://zouloux.github.io/virtual-mouse/)
+
+- [How it works ↓](#how-it-works)
+- [Code Example ↓](#code-example)
+- [Virtual Mouse Studio ↓](#virtual-mouse-studio)
+- [NPM ↓](#npm)
+- [Test it ↓](#test-it)
 
 ---
 ## How it works
@@ -76,7 +77,7 @@ await mouse.hide()
 mouse.dispose()
 ```
 
-## Example
+## Code Example
 
 This and example you can copy and paste in any website's console.
 
@@ -102,41 +103,29 @@ const mouse = createVirtualMousePlayer({
 		border: "2px solid red",
 	},
 })
-
 // Enable hovers hack
 await mouse.initHoversHack()
-
 // Enable React synthetic events compatibility
 mouse.initReactEvents()
-
 // Move mouse to an absolute position in the screen ( not the viewport )
 await mouse.to(250, 250)
-
 // Move mouse relatively to its current position
 await mouse.move(-100, 0)
-
 // Scroll relatively
 await mouse.scroll(0, 200)
-
 // Hide virtual mouse
 await mouse.hide()
-
 // Scroll to an absolute position
 await mouse.scrollTo(0, 0)
-
 // Show virtual mouse
 await mouse.hide()
-
 // Wait 1 second
 await delay(1)
-
 // Click on element under virtual mouse
 await mouse.click()
-
 // Scroll and move mouse in the same time
 mouse.to(500, 500, { duration: 1 }) // no await
 await mouse.scroll(0, 500, { duration: 1 })
-
 // Dispose and go back to normal
 mouse.dispose()
 ```
@@ -144,9 +133,9 @@ mouse.dispose()
 ## Viewport size
 
 Because all positions are absolute to the viewport :
-When you create a virtual mouse scene, you have to save remember the actual viewport size.
+When you create a virtual mouse scene, you have to remember the actual viewport size.
 
-> The Studio will add a comment with the actual viewport size
+> Virtual Mouse Studio will add a comment with the actual viewport size as a comment
 
 ```javascript
 // Url /virtual-mouse-demo.html
@@ -179,7 +168,7 @@ The scene will be copied to your clipboard and ready to be pasted to play the sc
 ---
 ## NPM
 
-[Available on npm.](https://www.npmjs.com/package/@zouloux/virtual-mouse)
+[Available on npm ↗️](https://www.npmjs.com/package/@zouloux/virtual-mouse)
 
 ```bash
 npm i @zouloux/virtual-mouse
