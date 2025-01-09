@@ -291,8 +291,8 @@ export function createVirtualMousePlayer ( options:IInitOptions = {} ) {
 		get mouseElement () { return mouseElement },
 
 		async initHoversHack () {
-			// @ts-ignore
-			if (!('PseudoStyler' in window))
+			// Load PseudoStyler
+			if ( typeof window['PseudoStyler'] === "undefined" )
 				await loadScriptAsync("https://cdn.jsdelivr.net/gh/TSedlar/pseudo-styler@1.0.8/pseudostyler.js")
 			// @ts-ignore
 			styler = new PseudoStyler()
